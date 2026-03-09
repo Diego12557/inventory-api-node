@@ -50,4 +50,65 @@ const createSale = async (req, res) => {
   }
 };
 
-module.exports = { createSale, getSales };
+const getTotalSales = async (req, res) => {
+  try {
+    const result = await Sale.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalSales: { $sum: "$total" },
+        },
+      },
+    ]);
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+};
+
+const getTopProduct = async (req, res) => {
+  try {
+    const result = await Sale.aggregate([
+      {
+        $unwind: "$products",
+      },
+      {
+        $group: {
+          _id: "$products.productId",
+          totalSold: { $sum: "$products.quantity" },
+        },
+      },
+      {
+        $sort: { totalSold: -1 },
+      },
+      {
+        $limit: 1,
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      {
+        $unwind: "$product",
+      },
+      {
+        $project: {
+          _id: 0,
+          product: "$product.name",
+          totalSold: 1,
+        },
+      },
+    ]);
+
+    res.json(result[0])
+  } catch (error) {
+    res.status(500).json(error)
+  }
+};
+
+module.exports = { createSale, getSales, getTotalSales, getTopProduct };
