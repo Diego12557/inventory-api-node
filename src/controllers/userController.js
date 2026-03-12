@@ -11,6 +11,7 @@ const registerUser = async (req, res) => {
       username: req.body.username,
       email: req.body.email,
       password: hashedPassword,
+      role: req.body.role || 'user'
     });
 
     const savedUser = await user.save();
@@ -38,7 +39,7 @@ const login = async (req, res) => {
       return res.status(400).json("Contraseña incorrecta");
     }
 
-    const token = jwt.sign({ id: user._id }, "clave_secreta");
+    const token = jwt.sign({ id: user._id, role: user.role }, "clave_secreta");
 
     res.json({
       user,
